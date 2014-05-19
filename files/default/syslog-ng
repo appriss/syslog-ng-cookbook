@@ -1,0 +1,110 @@
+#!/bin/sh
+#
+# syslog-ng -- advanced replacement for standard syslog.
+#
+# chkconfig: 2345 12 88
+# description: syslog-ng is the next generation of the syslog daemon. \
+# syslog-ng gives you the flexibility of logging not only by facility and \
+# severity, but also by host, message content, date, etc. it can also replace \
+# klogd's function of logging kernel messages
+#
+# config: /usr/local/etc/syslog-ng/syslog-ng.conf
+#
+### BEGIN INIT INFO
+# Provides: $syslog
+### END INIT INFO
+#
+# Based on original syslog-ng init script for RedHat by Gregor Binder.
+# Original attributions:
+# Author: Gregor Binder <gbinder@sysfive.com>
+# Updated by: Diane Davidowicz
+# Copyright (c) 2000 by sysfive.com GmbH, All rights reserved.
+#
+# This version by Phil Hollenback <phil@telemetry-investments.com>
+#  developed and tested on Fedora Core 1, but should work on any
+#  version of RedHat or Fedora.
+#
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+prog="syslog-ng"
+bin="/usr/local/sbin/$prog"
+
+if [ -f /etc/sysconfig/$prog ] ; then
+        . /etc/sysconfig/$prog
+else
+	SYSLOGNG_OPTIONS=""
+fi
+
+RETVAL=0
+umask 077
+ulimit -c 0
+
+start() {
+	echo -n "Starting $prog: "
+	daemon $bin $SYSLOGNG_OPTIONS
+	RETVAL=$?
+	# Uncomment the following if you have read the syslog-ng
+	# documentation and choose to still run klogd.
+	#echo -n "Starting Kernel Logger: "
+	#[ -x "/sbin/klogd" ] && daemon klogd
+	echo
+	[ $RETVAL -eq 0 ] && touch "/var/lock/subsys/${prog}"
+}
+
+stop() {
+	echo -n "Stopping $prog: "
+        killproc $prog
+        RETVAL=$?
+	# Uncomment the following if you are running klogd (see above)
+        #echo -n "Stopping Kernel Logger: "
+        #[ -x "/sbin/klogd" ] && killproc klogd
+        echo
+        [ $RETVAL -eq 0 ] && rm -f "/var/lock/subsys/${prog}"
+}
+
+restart() {
+	stop
+	start
+	return $?
+}
+
+reload() {
+	echo -n $"Reloading $prog: "
+        killproc $prog -HUP
+        RETVAL=$?
+        echo
+        return $RETVAL
+}
+	
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+	status $prog
+	RETVAL=$?
+	;;
+  restart)
+	restart
+	RETVAL=$?
+	;;
+  condrestart)
+	[ -f /var/lock/subsys/${prog} ] && restart || :
+	RETVAL=$?
+        ;;
+  reload)
+	reload
+	;;
+  *)
+	echo "Usage: $0 {start|stop|status|restart|condrestart|reload}"
+	exit 1
+esac
+
+exit $RETVAL

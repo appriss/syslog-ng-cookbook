@@ -37,3 +37,11 @@ rm #{::File.join(node['syslog-ng'][:install_tmp_dir],node['syslog-ng'][:archive]
 
 EOF
 end
+
+cookbook_file "/etc/init.d/syslog-ng" do
+	mode 0755
+end
+
+service "syslog-ng" do
+        action :start
+end
